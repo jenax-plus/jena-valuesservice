@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.aksw.jena.valuesservice</groupId>
 	<artifactId>jena-valuesservice-parent</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.6.0</version>
 	<packaging>pom</packaging>
 
 	<name>Jena Values Service - Parent</name>
@@ -197,7 +197,7 @@
 				<configuration>
 					<gitFlowConfig>
 						<versionTagPrefix>v</versionTagPrefix>
-						<productionBranch>main</productionBranch>
+						<productionBranch>master</productionBranch>
 					</gitFlowConfig>
 				</configuration>
 			</plugin>
