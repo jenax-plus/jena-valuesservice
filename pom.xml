@@ -197,7 +197,7 @@
 				<configuration>
 					<gitFlowConfig>
 						<versionTagPrefix>v</versionTagPrefix>
-						<productionBranch>main</productionBranch>
+						<productionBranch>master</productionBranch>
 					</gitFlowConfig>
 				</configuration>
 			</plugin>
