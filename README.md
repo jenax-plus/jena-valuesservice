@@ -38,8 +38,8 @@ SERVICE <https://a.example/sparql> {
 ```
 
 This obtains the table from A's dataset. Use `values:0` for the initiating dataset
-or `values:2` for B's dataset. Any endpoint receiving unresolved markers needs the
-plugin. Deferred marker bodies remain untouched until their destination handles
+or `values:2` for B's dataset. **Any endpoint receiving unresolved markers needs the
+plugin.** Deferred marker bodies remain untouched until their destination handles
 them. Write decimal counters without brackets. Malformed counters, integer
 overflow, and counters exceeding the enclosing SERVICE depth raise errors.
 Marker workloads start a fresh scope for depth validation.
