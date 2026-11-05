@@ -10,20 +10,25 @@ execution context's dataset and active graph, then replaces that SERVICE with an
 Suppose the local dataset's default graph contains these three triples:
 
 ```turtle
-<urn:alice> a <urn:Selected> .
-<urn:bob>   a <urn:Selected> .
-<urn:carol> a <urn:Other> .
+PREFIX eg: <http://www.example.org/>
+
+<http://dbpedia.org/resource/Leipzig> rdf:type eg:SelectedItem .
+<http://dbpedia.org/resource/London> rdf:type eg:SelectedItem .
+<http://example.org/Foobar> rdf:type eg:Other .
 ```
 
 Run this query locally to select Alice and Bob and fetch their labels from a remote endpoint:
 
 ```sparql
-SELECT ?x ?label {
-  SERVICE <https://example.org/sparql> {
-    SERVICE <values:> { # Executed locally, outside the enclosing SERVICE clause.
-      SELECT DISTINCT ?x WHERE { ?x a <urn:Selected> }
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX eg: <http://www.example.org/>
+
+SELECT * {
+  SERVICE <https://dbpedia.org/sparql> {
+    SERVICE <values:> { # Executed locally, outside the enclosing dbpedia SERVICE clause.
+      ?s a eg:SelectedItem
     }
-    ?x <urn:label> ?label
+    ?s rdfs:label ?o
   }
 }
 ```
@@ -33,21 +38,21 @@ its `SERVICE <values:>` block with this binding table. Carol is excluded because
 she has type `<urn:Other>`:
 
 ```sparql
-VALUES ?x {
-  <urn:alice>
-  <urn:bob>
+VALUES ?s {
+  <http://dbpedia.org/resource/Leipzig>
+  <http://dbpedia.org/resource/London>
 }
 ```
 
-The query sent to `https://example.org/sparql` is equivalent to:
+The query sent to `https://dbpedia.org/sparql` is equivalent to:
 
 ```sparql
 SELECT * WHERE {
-  VALUES ?x {
-    <urn:alice>
-    <urn:bob>
+  VALUES ?s {
+    <http://dbpedia.org/resource/Leipzig>
+    <http://dbpedia.org/resource/London>
   }
-  ?x <urn:label> ?label
+  ?x <http://www.w3.org/2000/01/rdf-schema#label> ?label
 }
 ```
 
