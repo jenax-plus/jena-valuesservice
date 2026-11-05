@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.aksw.jena.valuesservice</groupId>
     <artifactId>jena-valuesservice-parent</artifactId>
-    <version>0.6.1-SNAPSHOT</version>
+    <version>0.6.1</version>
   </parent>
   <artifactId>jena-valuesservice-pkg-fuseki-plugin</artifactId>
   <name>Jena Values Service - Fuseki Plugin JAR</name>
