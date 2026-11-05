@@ -1,14 +1,34 @@
+CWD = $(shell pwd)
+
+POM = -f pom.xml
+# Maven Clean Install Skip ; skip tests, javadoc, scaladoc, etc
 MVN ?= mvn
+MS = $(MVN) -DskipTests -Dmaven.javadoc.skip=true -Dskip
+MCIS = $(MS) clean install
+MCCS = $(MS) clean compile
 ARGS ?=
 
-.PHONY: help test fuseki-plugin
+VER = $(error specify VER=releasefile-name e.g. VER=1.9.7-rc2)
+loud = echo "@@" $(1);$(1)
 
-help: ## Show available targets
-	@echo 'make test           Run the test suite'
-	@echo 'make fuseki-plugin  Test and package the Fuseki plugin JAR'
+# Source: https://stackoverflow.com/questions/4219255/how-do-you-get-the-list-of-targets-in-a-makefile
+.PHONY: help
 
-test: ## Run the test suite
-	$(MVN) test $(ARGS)
+.ONESHELL:
+help:   ## Show these help instructions
+	@sed -rn 's/^([a-zA-Z_-]+):.*?## (.*)$$/"\1" "\2"/p' < $(MAKEFILE_LIST) | xargs printf "make %-20s# %s\n"
 
-fuseki-plugin: ## Test and package the Fuseki plugin JAR
-	$(MVN) -Pbundle clean package $(ARGS)
+fuseki-plugin: ## Create the self-contained ExecTracker Fuseki Plugin JAR
+	$(MCCS) $(POM) package -Pbundle -pl :jena-valuesservice-pkg-fuseki-plugin -am $(ARGS)
+	file=`find '$(CWD)/jena-valuesservice-pkg-fuseki-plugin/target' -name '*-fuseki-plugin*.jar'`
+	printf '\nCreated package:\n\n%s\n\n' "$$file"
+
+release-github: SHELL:=/bin/bash
+release-github: ## Create files for Github upload
+	@set -eu
+	ver=$(VER)
+	$(call loud,$(MAKE) fuseki-plugin)
+	file=`find '$(CWD)/jena-valuesservice-pkg-fuseki-plugin/target' -name '*-fuseki-plugin*.jar'`
+	$(call loud,cp "$$file" "jena-valuesservice-fuseki-plugin-$$ver.jar")
+	$(call loud,gh release create v$$ver "jena-valuesservice-fuseki-plugin-$$ver.jar")
+
