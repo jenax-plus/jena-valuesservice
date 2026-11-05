@@ -5,10 +5,22 @@ Inject dynamically computed binding tables into remote SPARQL requests. A Jena
 execution context's dataset and active graph, then replaces that SERVICE with an
 `OpTable`—serialized as `VALUES` in the outgoing request.
 
+## Complete example
+
+Suppose the local dataset's default graph contains these three triples:
+
+```turtle
+<urn:alice> a <urn:Selected> .
+<urn:bob>   a <urn:Selected> .
+<urn:carol> a <urn:Other> .
+```
+
+Run this query locally to select Alice and Bob and fetch their labels from a remote endpoint:
+
 ```sparql
 SELECT ?x ?label {
   SERVICE <https://example.org/sparql> {
-    SERVICE <values:> {
+    SERVICE <values:> { # Executed locally, outside the enclosing SERVICE clause.
       SELECT DISTINCT ?x WHERE { ?x a <urn:Selected> }
     }
     ?x <urn:label> ?label
@@ -16,10 +28,36 @@ SELECT ?x ?label {
 }
 ```
 
-Here the identifiers come from the local dataset; the remote endpoint receives
-an ordinary query containing `VALUES`. Tables support multiple columns,
-duplicates, unbound cells (`UNDEF`), and empty results. Use `SELECT DISTINCT` inside
-the marker when a unique list is desired. Current input bindings are respected.
+The plugin evaluates the inner `SELECT` against the local dataset and replaces
+its `SERVICE <values:>` block with this binding table. Carol is excluded because
+she has type `<urn:Other>`:
+
+```sparql
+VALUES ?x {
+  <urn:alice>
+  <urn:bob>
+}
+```
+
+The query sent to `https://example.org/sparql` is equivalent to:
+
+```sparql
+SELECT * WHERE {
+  VALUES ?x {
+    <urn:alice>
+    <urn:bob>
+  }
+  ?x <urn:label> ?label
+}
+```
+
+The remote endpoint supplies the labels; the three local triples only select
+which resources to look up. The remote endpoint receives standard SPARQL and
+does not need this plugin once all values markers have been materialized.
+
+Tables support multiple columns, duplicates, unbound cells (`UNDEF`), and empty
+results. Use `SELECT DISTINCT` inside the marker when a unique list is desired.
+Current input bindings are respected.
 
 ## Choosing the execution location
 
