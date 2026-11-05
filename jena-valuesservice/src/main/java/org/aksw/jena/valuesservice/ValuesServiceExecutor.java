@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.QueryExecException;
@@ -33,6 +34,10 @@ import org.apache.jena.sparql.algebra.op.OpTable;
 import org.apache.jena.sparql.algebra.table.TableData;
 import org.apache.jena.sparql.core.Substitute;
 import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.core.NamedGraph;
+import org.apache.jena.sparql.core.Quad;
+import org.apache.jena.sparql.util.Context;
+import org.apache.jena.sparql.util.Symbol;
 import org.apache.jena.sparql.engine.ExecutionContext;
 import org.apache.jena.sparql.engine.QueryIterator;
 import org.apache.jena.sparql.engine.binding.Binding;
@@ -49,6 +54,32 @@ import org.apache.jena.sparql.service.single.ServiceExecutor;
 public class ValuesServiceExecutor implements ChainingServiceExecutor {
     /** Shared stateless executor, also used by automatic registration. */
     public static final ValuesServiceExecutor INSTANCE = new ValuesServiceExecutor();
+
+    // Use the symbols directly so the runtime does not require either TDB module.
+    private static final Symbol UDG = Symbol.create("http://jena.apache.org/TDB#unionDefaultGraph");
+    private static final Symbol UDG_LEGACY = Symbol.create("http://jena.hpl.hp.com/TDB#unionDefaultGraph");
+
+    /** Whether either of Jena's TDB union-default-graph request flags is enabled. */
+    public static boolean isUnionDefaultGraph(Context context) {
+        return context.isTrue(UDG) || context.isTrue(UDG_LEGACY);
+    }
+
+    private static ExecutionContext materializationContext(ExecutionContext parent) {
+        Graph activeGraph = parent.getActiveGraph();
+        if (parent.getDataset() != null && isUnionDefaultGraph(parent.getContext())) {
+            // GraphView (including TDB's graph view) identifies default scope by name;
+            // in-memory graphs can instead be the dataset's default graph object.
+            boolean defaultScope = activeGraph instanceof NamedGraph named
+                    ? named.getGraphName() == null || Quad.isDefaultGraph(named.getGraphName())
+                    : activeGraph == parent.getDataset().getDefaultGraph();
+            if (defaultScope) {
+                activeGraph = parent.getDataset().getUnionGraph();
+            }
+        }
+        Context context = parent.getContext().copy();
+        QC.setFactory(context, parent.getExecutor());
+        return ExecutionContext.create(parent.getDataset(), activeGraph, context);
+    }
 
     @Override
     public QueryIterator createExecution(OpService opExecute, OpService opOriginal,
@@ -168,7 +199,7 @@ public class ValuesServiceExecutor implements ChainingServiceExecutor {
             if (isCancelled(execCxt)) {
                 throw new QueryCancelledException();
             }
-            iterator = QC.execute(service.getSubOp(), binding, execCxt);
+            iterator = QC.execute(service.getSubOp(), binding, materializationContext(execCxt));
             while (iterator.hasNext()) {
                 if (isCancelled(execCxt)) {
                     throw new QueryCancelledException();

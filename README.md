@@ -50,6 +50,17 @@ identity table on workload failure. Local validation errors and cancellation
 propagate; remote errors follow the enclosing SERVICE's SILENT behavior. Blank nodes and terms other than IRIs/literals are rejected. Results
 are buffered in memory; there is no caching or automatic batching.
 
+Union-default-graph mode honors the current and legacy TDB request-context flags
+(`http://jena.apache.org/TDB#unionDefaultGraph` and
+`http://jena.hpl.hp.com/TDB#unionDefaultGraph`). In default-graph scope, local
+materialization selects the dataset's union graph in a copied execution context.
+Explicit named active graphs and `GRAPH` clauses inside the workload retain their
+scope. jena-proxy publishes the current TDB symbol for compatibility. The library
+has no runtime dependency on TDB; TDB2 is used in regression tests.
+TDB2's quad planning can remove an enclosing `GRAPH { SERVICE ... }` wrapper
+before interception; put `GRAPH` inside the values workload when specifying its
+local source graph.
+
 ## Build and use
 
 Requires Java 21+, Maven, and Jena 6.2.0.
@@ -69,3 +80,12 @@ to the server's startup classpath and restart. The bundle includes the plugin an
 lifecycle descriptor; Fuseki supplies Jena. No separate Fuseki module is needed.
 
 Licensed under the [Apache License, Version 2.0](LICENSE).
+
+## Changelog
+
+Newest versions first.
+
+| Version | Highlights |
+| --- | --- |
+| [v0.6.1](https://github.com/jenax-plus/jena-valuesservice/releases/tag/v0.6.1) | Adds union-default-graph support using the TDB request-context flags, with copied materialization contexts and TDB2 regression tests. Fixes the Makefile and Fuseki plugin packaging. |
+| [v0.6.0](https://github.com/jenax-plus/jena-valuesservice/releases/tag/v0.6.0) | Initial release: dynamic SERVICE-to-VALUES substitution, deferred materialization through hop counters, and automatic ARQ/Fuseki registration. |
